@@ -1,5 +1,6 @@
 package dio.budgeting.infrastructure.http;
 
+import dio.budgeting.application.GetExpenseSummaryByCategoryUseCase;
 import dio.budgeting.application.ListTransactionsByCategoryUseCase;
 import dio.budgeting.application.PersistTransactionUseCase;
 import dio.budgeting.domain.Category;
@@ -24,24 +25,36 @@ import java.util.List;
 public class TransactionController {
     private final PersistTransactionUseCase persistTransactionUseCase;
     private final ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase;
+    private final GetExpenseSummaryByCategoryUseCase getExpenseSummaryByCategoryUseCase;
 
     private final TranscriptionModel transcriptionModel;
     private final ChatClient chatClient;
     private final TextToSpeechModel textToSpeechModel;
 
-    public TransactionController(PersistTransactionUseCase persistTransactionUseCase,
-                                 ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase,
-                                 TranscriptionModel transcriptionModel,
-                                 @Value("classpath:prompts/system-message.st") Resource systemPrompt,
-                                 ChatClient.Builder chatClientBuilder,
-                                 TextToSpeechModel textToSpeechModel) throws IOException {
+    public TransactionController(
+            PersistTransactionUseCase persistTransactionUseCase,
+            ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase,
+            GetExpenseSummaryByCategoryUseCase getExpenseSummaryByCategoryUseCase,
+            TranscriptionModel transcriptionModel,
+            @Value("classpath:prompts/system-message.st") Resource systemPrompt,
+            ChatClient.Builder chatClientBuilder,
+            TextToSpeechModel textToSpeechModel) throws IOException {
+
         this.persistTransactionUseCase = persistTransactionUseCase;
         this.listTransactionsByCategoryUseCase = listTransactionsByCategoryUseCase;
+        this.getExpenseSummaryByCategoryUseCase = getExpenseSummaryByCategoryUseCase;
+
         this.transcriptionModel = transcriptionModel;
+
         this.chatClient = chatClientBuilder
                 .defaultSystem(systemPrompt.getContentAsString(Charset.defaultCharset()))
-                .defaultTools(persistTransactionUseCase, listTransactionsByCategoryUseCase)
+                .defaultTools(
+                        persistTransactionUseCase,
+                        listTransactionsByCategoryUseCase,
+                        getExpenseSummaryByCategoryUseCase
+                )
                 .build();
+
         this.textToSpeechModel = textToSpeechModel;
     }
 
@@ -54,10 +67,17 @@ public class TransactionController {
 
     @GetMapping("/{category}")
     public List<TransactionResponse> readTransactions(@PathVariable Category category) {
-        return listTransactionsByCategoryUseCase.execute(category).stream().map(TransactionResponse::from).toList();
+        return listTransactionsByCategoryUseCase.execute(category)
+                .stream()
+                .map(TransactionResponse::from)
+                .toList();
     }
 
-    @PostMapping(value = "/ai", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = "audio/mp3")
+    @PostMapping(
+            value = "/ai",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = "audio/mp3"
+    )
     ResponseEntity<Resource> transcribe(@RequestParam("file") MultipartFile file) {
         var userMessage = transcriptionModel.transcribe(file.getResource());
         var result = chatClient.prompt().user(userMessage).call().content();
@@ -66,11 +86,13 @@ public class TransactionController {
         var resource = new ByteArrayResource(audio);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
                                 .filename("audio.mp3")
                                 .build()
-                                .toString())
+                                .toString()
+                )
                 .body(resource);
     }
 }
