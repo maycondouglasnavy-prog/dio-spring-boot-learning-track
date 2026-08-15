@@ -1,85 +1,76 @@
-# DIO Spring Boot - Final Project 05: Spring AI (budgeting)
+# 💰 Budgeting - Spring AI
 
-## Introduction
+Projeto desenvolvido durante a trilha **Santander 2026 - AI Java Back-end**, com foco na construção de uma aplicação de gerenciamento financeiro utilizando **Java, Spring Boot, Spring AI, OpenAI e MySQL**.
 
-This final module applies Spring AI in a budgeting API while preserving the same layered architecture used across the track.
+A aplicação permite registrar e consultar transações financeiras e utiliza Inteligência Artificial para interpretar solicitações do usuário e executar operações por meio de ferramentas disponibilizadas à IA.
 
-The goal is to integrate AI capabilities without bypassing domain and use case boundaries.
+---
 
-## Code Context
+## 🚀 Sobre o projeto
 
-The project processes voice commands to create and query financial transactions.
+O projeto consiste em uma aplicação de gerenciamento de transações financeiras integrada ao **Spring AI**.
 
-Primary flow:
+O usuário pode interagir com o sistema utilizando linguagem natural, enquanto o modelo de IA utiliza ferramentas (*tools*) disponíveis na aplicação para consultar ou manipular os dados financeiros.
 
-1. Client uploads an audio file.
-2. Audio is transcribed into text.
-3. The model selects an application tool/use case.
-4. The use case persists or queries transaction data.
-5. The final response is converted to audio.
+### Principais funcionalidades
 
-## Project Structure
+- 💰 Registro de transações financeiras.
+- 📋 Listagem de transações por categoria.
+- 📊 Resumo de despesas por categoria.
+- 🤖 Integração com OpenAI através do Spring AI.
+- 🎙️ Transcrição de áudio para texto.
+- 🔊 Conversão da resposta da IA para áudio.
+- 🗄️ Persistência das transações em MySQL.
+- 🧠 Uso de ferramentas (*tools*) para permitir que a IA interaja com os dados da aplicação.
 
-- `src/main/java/dio/budgeting/domain`
-  - Domain model and repository contract.
-- `src/main/java/dio/budgeting/application`
-  - Use cases used by both REST and AI tool calling.
-- `src/main/java/dio/budgeting/infrastructure`
-  - HTTP adapters, JPA adapters, and integration glue.
+---
 
-## Module-Specific Topics
+## 🛠️ Tecnologias utilizadas
 
-### Speech-to-text
+- Java 21
+- Spring Boot
+- Spring AI
+- OpenAI API
+- Gradle
+- MySQL
+- Docker / Docker Compose
+- Spring Data JPA
+- Hibernate
+- Git
+- GitHub
 
-- Uses `TranscriptionModel` for audio transcription.
-- Model settings are configured in `application.properties`.
+---
 
-### Tool calling
+## 📂 Estrutura do projeto
 
-- `ChatClient` registers use-case tools.
-- `@Tool` methods expose business capabilities to the model.
-
-### Text-to-speech
-
-- `TextToSpeechModel` produces MP3 output from final text.
-- AI endpoint returns generated audio.
-
-## Spring AI Documentation
-
-- Spring AI Reference: https://docs.spring.io/spring-ai/reference/index.html
-- ChatModel API: https://docs.spring.io/spring-ai/reference/api/chatmodel.html
-- ChatClient API: https://docs.spring.io/spring-ai/reference/api/chatclient.html
-- Tools API: https://docs.spring.io/spring-ai/reference/api/tools.html
-- Audio Transcriptions API: https://docs.spring.io/spring-ai/reference/api/audio/transcriptions.html
-- Audio Speech API: https://docs.spring.io/spring-ai/reference/api/audio/speech.html
-
-## Shared Architecture References
-
-Common architecture concepts are documented in the root README:
-
-- [DDD layers](../README.md#ddd-layered-architecture)
-- [Class vs record](../README.md#java-class-vs-java-record-in-domain-modeling)
-- [Strong typed identifiers](../README.md#strong-typed-identifiers)
-- [Repository pattern](../README.md#repository-pattern)
-- [Use cases and Clean Architecture](../README.md#use-cases-and-clean-architecture)
-- [Docker Compose support](../README.md#docker-compose-support-in-development)
-
-## How to Run
-
-Set your OpenAI API key:
-
-```bash
-export OPENAI_API_KEY="your_api_key_here"
-```
-
-Run the application and tests:
-
-```bash
-./gradlew bootRun
-./gradlew test
-```
-
-## Notes
-
-- Educational final project focused on AI plus architectural discipline.
-- External provider integration tests may require active credentials.
+```text
+05-spring-ai/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── dio/
+│   │   │       └── budgeting/
+│   │   │           ├── application/
+│   │   │           │   ├── GetExpenseSummaryByCategoryUseCase.java
+│   │   │           │   ├── ListTransactionsByCategoryUseCase.java
+│   │   │           │   ├── PersistTransactionUseCase.java
+│   │   │           │   └── output/
+│   │   │           │       └── ExpenseSummaryOutput.java
+│   │   │           │
+│   │   │           ├── domain/
+│   │   │           └── infrastructure/
+│   │   │               └── http/
+│   │   │                   └── TransactionController.java
+│   │   │
+│   │   └── resources/
+│   │       ├── prompts/
+│   │       │   └── system-message.st
+│   │       └── application.properties
+│   │
+│   ├── test/
+│   │
+│   └── ...
+│
+├── build.gradle
+├── docker-compose.yml
+└── gradlew
