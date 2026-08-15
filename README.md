@@ -1,76 +1,136 @@
-# 💰 Budgeting - Spring AI
+# DIO Spring Boot Learning Track
 
-Projeto desenvolvido durante a trilha **Santander 2026 - AI Java Back-end**, com foco na construção de uma aplicação de gerenciamento financeiro utilizando **Java, Spring Boot, Spring AI, OpenAI e MySQL**.
+This repository contains a DIO Spring Boot learning track organized as incremental modules.
 
-A aplicação permite registrar e consultar transações financeiras e utiliza Inteligência Artificial para interpretar solicitações do usuário e executar operações por meio de ferramentas disponibilizadas à IA.
+The track starts with architecture foundations and progressively moves through web APIs, data access, security, service integration, and AI-enabled workflows.
 
----
+<img width="2752" height="1536" alt="unnamed" src="https://github.com/user-attachments/assets/a7bcbe19-4d0c-4395-8696-8c64be22764f" />
 
-## 🚀 Sobre o projeto
+## Modules
 
-O projeto consiste em uma aplicação de gerenciamento de transações financeiras integrada ao **Spring AI**.
+- [`00-domain-driven-design`](00-domain-driven-design/README.md)  
+  DDD foundations with a catalog domain and no web layer.
+- [`01-spring-web`](01-spring-web/README.md)  
+  REST API design with Spring Web and API documentation with Spring REST Docs.
+- [`02-spring-data`](02-spring-data/README.md)  
+  Data access in a multi-context application using MySQL, MongoDB, Redis, and PostgreSQL.
+- [`03-spring-security`](03-spring-security/README.md)  
+  Authentication and authorization with Spring Security in a proposal management API.
+- [`04-spring-cloud-openfeign`](04-spring-cloud-openfeign/README.md)  
+  External service integration (KYC/AML) using Spring Cloud OpenFeign and resilience patterns.
+- [`05-spring-ai`](05-spring-ai/README.md)  
+  Final project using Spring AI for speech-to-text, tool calling, and text-to-speech.
 
-O usuário pode interagir com o sistema utilizando linguagem natural, enquanto o modelo de IA utiliza ferramentas (*tools*) disponíveis na aplicação para consultar ou manipular os dados financeiros.
+## Recommended Study Order
 
-### Principais funcionalidades
-
-- 💰 Registro de transações financeiras.
-- 📋 Listagem de transações por categoria.
-- 📊 Resumo de despesas por categoria.
-- 🤖 Integração com OpenAI através do Spring AI.
-- 🎙️ Transcrição de áudio para texto.
-- 🔊 Conversão da resposta da IA para áudio.
-- 🗄️ Persistência das transações em MySQL.
-- 🧠 Uso de ferramentas (*tools*) para permitir que a IA interaja com os dados da aplicação.
-
----
-
-## 🛠️ Tecnologias utilizadas
-
-- Java 21
-- Spring Boot
-- Spring AI
-- OpenAI API
-- Gradle
-- MySQL
-- Docker / Docker Compose
-- Spring Data JPA
-- Hibernate
-- Git
-- GitHub
+1. [`00-domain-driven-design`](00-domain-driven-design/README.md)
+2. [`01-spring-web`](01-spring-web/README.md)
+3. [`02-spring-data`](02-spring-data/README.md)
+4. [`03-spring-security`](03-spring-security/README.md)
+5. [`04-spring-cloud-openfeign`](04-spring-cloud-openfeign/README.md)
+6. [`05-spring-ai`](05-spring-ai/README.md)
 
 ---
 
-## 📂 Estrutura do projeto
+## Shared Architecture Guide
+
+The sections below consolidate architecture topics that are intentionally reused across modules.
+
+### DDD Layered Architecture
+
+Most modules follow the same conceptual split:
 
 ```text
-05-spring-ai/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── dio/
-│   │   │       └── budgeting/
-│   │   │           ├── application/
-│   │   │           │   ├── GetExpenseSummaryByCategoryUseCase.java
-│   │   │           │   ├── ListTransactionsByCategoryUseCase.java
-│   │   │           │   ├── PersistTransactionUseCase.java
-│   │   │           │   └── output/
-│   │   │           │       └── ExpenseSummaryOutput.java
-│   │   │           │
-│   │   │           ├── domain/
-│   │   │           └── infrastructure/
-│   │   │               └── http/
-│   │   │                   └── TransactionController.java
-│   │   │
-│   │   └── resources/
-│   │       ├── prompts/
-│   │       │   └── system-message.st
-│   │       └── application.properties
-│   │
-│   ├── test/
-│   │
-│   └── ...
-│
-├── build.gradle
-├── docker-compose.yml
-└── gradlew
+domain/          -> business model, invariants, contracts
+application/     -> use cases, orchestration, application policies
+infrastructure/  -> adapters (HTTP, persistence, external clients, framework glue)
+```
+
+Why this matters:
+
+- `domain` stays focused on business language and rules, not framework details.
+- `application` coordinates domain behavior for specific user/business actions.
+- `infrastructure` can change (database, web transport, external APIs) without forcing core business rewrites.
+
+This separation reduces coupling and supports long-term maintainability.
+
+### Java Class vs Java Record in Domain Modeling
+
+A practical guideline used across the track:
+
+- Use `class` for entities/aggregates that have identity and may evolve behavior over time.
+- Use `record` for immutable value objects and DTO-style transport models.
+
+Design trade-offs:
+
+- `class` supports richer lifecycle behavior and controlled mutation.
+- `record` reduces boilerplate and makes immutability explicit.
+
+This distinction improves code intent and keeps domain concepts clearer.
+
+### Strong Typed Identifiers
+
+Instead of passing raw primitives (`UUID`, `String`) everywhere, modules wrap identifiers in explicit types such as `BookId`, `TaskId`, `ProposalId`, and `TransactionId`.
+
+Benefits:
+
+- Better compile-time safety (fewer accidental ID mix-ups).
+- More expressive signatures (`findById(TaskId id)` communicates intent).
+- Cleaner evolution path for ID rules and validation.
+
+### Repository Pattern
+
+The repository contract belongs to the business side, while technology-specific implementations stay in infrastructure.
+
+Pattern used in this repository:
+
+- Domain contract: `XxxRepository` in `domain/`.
+- Adapter implementation: JPA/in-memory/etc. in `infrastructure/`.
+
+Architectural impact:
+
+- Business logic depends on abstractions, not persistence frameworks.
+- Switching storage technology becomes an adapter change, not a domain rewrite.
+- Unit testing use cases becomes simpler with fake/mock repositories.
+
+### Use Cases and Clean Architecture
+
+Each use case models one business capability (for example, create task, list proposals, analyze company risk).
+
+Common flow:
+
+1. Controller/listener receives an external request.
+2. It calls one application use case.
+3. The use case orchestrates domain objects and repository/gateway contracts.
+4. Infrastructure adapters handle persistence or external integrations.
+
+Why this is important:
+
+- Strong single-responsibility boundaries.
+- Easier testability and refactoring.
+- Better readability of business workflows.
+
+### Docker Compose Support in Development
+
+Several modules include `compose.yml` and Spring Boot Docker Compose support.
+
+Typical local development role:
+
+- Start required infra services (database/cache/message dependencies).
+- Keep local setup reproducible for all students.
+- Reduce onboarding friction by standardizing environment dependencies.
+
+Note: exact behavior can vary by module configuration and runtime profile.
+
+---
+
+## Quick Start
+
+Choose a module and run its local instructions:
+
+```bash
+cd 01-spring-web
+./gradlew test
+```
+
+For module-specific details, always check each module README from the links above.
